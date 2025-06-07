@@ -7,7 +7,10 @@ const router = Router();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const products = await Product.find();
-    res.json(products);
+    res.json({
+      items: products,
+      total: products.length,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Ошибка при получении товаров', error });
   }
