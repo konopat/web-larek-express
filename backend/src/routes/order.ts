@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import Product from '../models/product';
 import BadRequestError from '../errors/bad-request-error';
 import InternalServerError from '../errors/internal-server-error';
+import { validateOrderBody } from '../middleware/validation';
 
 const router = Router();
 
@@ -18,47 +19,18 @@ interface OrderData {
   items: string[];
 }
 
-// Валидация email
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+// Валидация email теперь выполняется в middleware celebrate
 
 // POST /order — создаёт заказ
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', validateOrderBody, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
-      payment,
-      email,
-      phone,
-      address,
       total,
       items,
     }: OrderData = req.body;
 
-    // Проверка обязательных полей
-    if (!payment || !email || !phone || !address || total === undefined || !items) {
-      next(new BadRequestError('Все поля обязательны: payment, email, phone, address, total, items'));
-      return;
-    }
-
-    // Валидация payment
-    if (payment !== 'card' && payment !== 'online') {
-      next(new BadRequestError('Поле payment должно быть "card" или "online"'));
-      return;
-    }
-
-    // Валидация email
-    if (!isValidEmail(email)) {
-      next(new BadRequestError('Некорректный формат email'));
-      return;
-    }
-
-    // Валидация items - непустой массив
-    if (!Array.isArray(items) || items.length === 0) {
-      next(new BadRequestError('Поле items должно быть непустым массивом'));
-      return;
-    }
+    // Базовая валидация уже выполнена middleware celebrate
+    // Дополнительная бизнес-логика валидации
 
     // Проверка существования товаров в базе данных
     const products = await Product.find({ _id: { $in: items } });

@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import path from 'path';
+import { errors } from 'celebrate';
 import productRoutes from './routes/product';
 import orderRoutes from './routes/order';
 import errorHandler from './middleware/error-handler';
@@ -24,6 +25,9 @@ app.use('/order', orderRoutes);
 app.use('*', (_req, _res, next) => {
   next(new NotFoundError('Маршрут не найден'));
 });
+
+// Обработка ошибок celebrate
+app.use(errors());
 
 // Централизованная обработка ошибок
 app.use(errorHandler);
