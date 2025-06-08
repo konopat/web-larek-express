@@ -8,6 +8,7 @@ import productRoutes from './routes/product';
 import orderRoutes from './routes/order';
 import errorHandler from './middleware/error-handler';
 import NotFoundError from './errors/not-found-error';
+import { requestLogger, errorLogger } from './middleware/logger';
 
 dotenv.config();
 
@@ -17,6 +18,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public'))); // теперь клиент имеет доступ только к публичным файлам
 
+// Логирование запросов (должно быть до роутов)
+app.use(requestLogger);
+
 // Подключение роутов
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);
@@ -25,6 +29,9 @@ app.use('/order', orderRoutes);
 app.use('*', (_req, _res, next) => {
   next(new NotFoundError('Маршрут не найден'));
 });
+
+// Логирование ошибок (должно быть после роутов, но до обработчиков ошибок)
+app.use(errorLogger);
 
 // Обработка ошибок celebrate
 app.use(errors());
