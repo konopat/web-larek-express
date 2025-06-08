@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import path from 'path';
 import productRoutes from './routes/product';
 import orderRoutes from './routes/order';
+import errorHandler from './middleware/errorHandler';
+import NotFoundError from './errors/not-found-error';
 
 dotenv.config();
 
@@ -17,6 +19,14 @@ app.use(express.static(path.join(__dirname, 'public'))); // теперь кли�
 // Подключение роутов
 app.use('/product', productRoutes);
 app.use('/order', orderRoutes);
+
+// Обработка несуществующих маршрутов (404)
+app.use('*', (_req, _res, next) => {
+  next(new NotFoundError('Маршрут не найден'));
+});
+
+// Централизованная обработка ошибок
+app.use(errorHandler);
 
 // Подключение к MongoDB
 mongoose.connect('mongodb://127.0.0.1:27017/weblarek')

@@ -1,6 +1,10 @@
-import { Router, Request, Response } from 'express';
+import {
+  Router, Request, Response, NextFunction,
+} from 'express';
 import { faker } from '@faker-js/faker';
 import Product from '../models/product';
+import BadRequestError from '../errors/bad-request-error';
+import InternalServerError from '../errors/internal-server-error';
 
 const router = Router();
 
@@ -21,7 +25,7 @@ const isValidEmail = (email: string): boolean => {
 };
 
 // POST /order — создаёт заказ
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       payment,
@@ -34,33 +38,25 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Проверка обязательных полей
     if (!payment || !email || !phone || !address || total === undefined || !items) {
-      res.status(400).json({
-        message: 'Все поля обязательны: payment, email, phone, address, total, items',
-      });
+      next(new BadRequestError('Все поля обязательны: payment, email, phone, address, total, items'));
       return;
     }
 
     // Валидация payment
     if (payment !== 'card' && payment !== 'online') {
-      res.status(400).json({
-        message: 'Поле payment должно быть "card" или "online"',
-      });
+      next(new BadRequestError('Поле payment должно быть "card" или "online"'));
       return;
     }
 
     // Валидация email
     if (!isValidEmail(email)) {
-      res.status(400).json({
-        message: 'Некорректный формат email',
-      });
+      next(new BadRequestError('Некорректный формат email'));
       return;
     }
 
     // Валидация items - непустой массив
     if (!Array.isArray(items) || items.length === 0) {
-      res.status(400).json({
-        message: 'Поле items должно быть непустым массивом',
-      });
+      next(new BadRequestError('Поле items должно быть непустым массивом'));
       return;
     }
 
@@ -68,27 +64,21 @@ router.post('/', async (req: Request, res: Response) => {
     const products = await Product.find({ _id: { $in: items } });
 
     if (products.length !== items.length) {
-      res.status(400).json({
-        message: 'Один или несколько товаров не найдены в базе данных',
-      });
+      next(new BadRequestError('Один или несколько товаров не найдены в базе данных'));
       return;
     }
 
     // Проверка что все товары продаются (price не null)
     const unsellableProducts = products.filter((product) => product.price === null);
     if (unsellableProducts.length > 0) {
-      res.status(400).json({
-        message: 'Некоторые товары недоступны для продажи',
-      });
+      next(new BadRequestError('Некоторые товары недоступны для продажи'));
       return;
     }
 
     // Проверка общей суммы заказа
     const calculatedTotal = products.reduce((sum, product) => sum + (product.price || 0), 0);
     if (calculatedTotal !== total) {
-      res.status(400).json({
-        message: `Неверная общая сумма. Ожидается: ${calculatedTotal}, получено: ${total}`,
-      });
+      next(new BadRequestError(`Неверная общая сумма. Ожидается: ${calculatedTotal}, получено: ${total}`));
       return;
     }
 
@@ -101,7 +91,7 @@ router.post('/', async (req: Request, res: Response) => {
       total,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Ошибка при создании заказа', error });
+    next(new InternalServerError('Ошибка при создании заказа'));
   }
 });
 
