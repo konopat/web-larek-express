@@ -1,5 +1,4 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -9,10 +8,8 @@ import orderRoutes from './routes/order';
 import errorHandler from './middleware/error-handler';
 import NotFoundError from './errors/not-found-error';
 import { requestLogger, errorLogger } from './middleware/logger';
+import { PORT, DB_ADDRESS } from './config';
 
-dotenv.config();
-
-const { PORT } = process.env;
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -40,7 +37,7 @@ app.use(errors());
 app.use(errorHandler);
 
 // Подключение к MongoDB
-mongoose.connect('mongodb://127.0.0.1:27017/weblarek')
+mongoose.connect(DB_ADDRESS)
   .then(() => {
     console.log('Успешное подключение к MongoDB');
   })
