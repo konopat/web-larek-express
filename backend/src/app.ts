@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import productRoutes from './routes/product';
 import orderRoutes from './routes/order';
-import errorHandler from './middleware/errorHandler';
+import errorHandler from './middleware/error-handler';
 import NotFoundError from './errors/not-found-error';
 
 dotenv.config();
